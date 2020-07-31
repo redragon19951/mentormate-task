@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Green vs Red</title>
+</head>
+<body>
+    
+    <label for="gridWidth">Grid width:</label><br>
+    <input type="text" id="gridWidth" name="gridWidth" placeholder="3"><br>
+    <label for="gridHeight">Grid height:</label><br>
+    <input type="text" id="gridHeight" name="gridHeight" placeholder="3"><br><br>
+    <label for="gridValues">Grid values:</label><br>
+    <input type="text" id="gridValues" name="gridValues" placeholder="000111000"><br><br>
+    <label for="x1">x1:</label><br>
+    <input type="text" id="x1" name="x1" placeholder="1"><br><br>
+    <label for="y1">y1:</label><br>
+    <input type="text" id="y1" name="y1" placeholder="0"><br><br>
+    <label for="n">n:</label><br>
+    <input type="text" id="n" name="n" placeholder="10"><br><br>
+    <button onclick="runGame()">Create</button>
+
+    <p id="result"></p>
+    <canvas id="myCanvas" width="300" height="300">
+    </canvas>
+    
+    <script>
+
+        function runGame() {   
+            var gridWidth = document.getElementById("gridWidth").value;
+            var gridHeight = document.getElementById("gridHeight").value;
+            var gridValues = document.getElementById("gridValues").value;
+            var x1 = document.getElementById("x1").value;
+            var y1 = document.getElementById("y1").value;         
+            var n = document.getElementById("n").value;
+            var greenCounter = 0;         
+
+            const gridBuilder = new Grid(gridWidth, gridHeight, gridValues, n);
+            gameField = gridBuilder.gridCreator();
+            const game = new Game(gameField, gridWidth, gridHeight, x1, y1, n);
+
+            for(var i = 0; i < n; i++) {
+                //debugger;
+
+                game.drawBoard();
+
+                if(parseInt(gameField[x1][y1]) == 1){ // counting the times the selected cell turned green
+                    greenCounter++;
+                }
+
+                var newGameField = game.generationBuilder();
+
+                for (var j = 0; j < newGameField.length; j++) { // changing the state of the game field after applying the rules for the next generation
+                    gameField[j] = newGameField[j].slice();
+                }
+
+            }
+
+            document.getElementById("result").innerHTML = "Cell number [" + x1 + "][" + y1 + "] has turned green " + greenCounter + " times!";
+            
+        }
+
+        class Grid {
+            constructor(gridWidth, gridHeight, gridValues) {
+                this.gridWidth = gridWidth;
+                this.gridHeight = gridHeight;
+                this.gridValues = gridValues;
+            }
+
+            gridCreator() {
+                
+                var grid = new Array(parseInt(this.gridWidth));
+                
+                // Loop to create 2D array using 1D array
+
+                for (var i = 0; i < grid.length; i++) { 
+                    grid[i] = []; 
+                }              
+
+                var color = 0; 
+                var values = String(this.gridValues);
+
+                // Loop to initilize 2D array elements.
+                for (var i = 0; i < this.gridHeight; i++) { 
+                    for (var j = 0; j < this.gridWidth; j++) { 
+                        grid[i][j] = parseInt(values.charAt(color));
+                        color++;
+                    } 
+                }
+
+                return grid;
+            }
+        }
+
+        class Game {
+            constructor(gameField, gridWidth, gridHeight, x1, y1, cycle) {
+                this.gameField = gameField;
+                this.gridWidth = gridWidth;
+                this.gridHeight = gridHeight;
+                this.x1 = x1;
+                this.y1 = y1;
+                this.cycle = cycle;
+            }
+
+            drawBoard () {
+                var row = 0;
+                for(var i = 0; i < this.gridHeight; i++) {
+                    var column = 0;
+                    for(var j = 0; j < this.gridWidth; j++) {
+                        var c = document.getElementById("myCanvas");
+                        var ctx = c.getContext("2d");
+                        ctx.moveTo(0 + column,0 + row);
+                        ctx.lineTo(30 + column,0 + row);
+                        ctx.lineTo(30 + column,30 + row);
+                        ctx.lineTo(0 + column,30 + row);
+                        ctx.lineTo(0 + column,0 + row);
+                        ctx.stroke();
+                        ctx.beginPath();
+                        ctx.rect(0 + column, 0 + row, 30, 30);
+                        if(this.gameField[i][j] == 1) {
+                            ctx.fillStyle = "green";
+                        } else if (this.gameField[i][j] == 0) {
+                            ctx.fillStyle = "red";
+                        }
+                        ctx.fill();  
+                        
+                        column += 30;
+
+                    }
+                    row += 30;
+                }
+            }
+
+            generationBuilder () { // this method starts from the first cell checking every cell around it and moves on to the next one
+                                   // the proccess stops when all cells have a determined state for the next generation
+
+                var nextGenField = [];
+
+                for (var i = 0; i < this.gameField.length; i++) {
+                    nextGenField[i] = this.gameField[i].slice();
+                }
+
+                for(var i = 0; i < this.gridHeight; i++) {
+                    for(var j = 0; j < this.gridWidth; j++) {
+
+                            var red = 0;
+                            var green = 0;
+
+                                try {
+                                    if(this.gameField[i -1][j -1] == 0) { //top left of selected cell
+                                        red++;
+                                    } else if(this.gameField[i -1][j -1] == 1) {
+                                        green++;
+                                    }
+                                }
+                                catch(err) {
+                                    console.log("index of array does not exist");
+                                }
+
+                                try {
+                                    if(this.gameField[i -1][j] == 0) { //top of selected cell
+                                        red++;
+                                    } else if(this.gameField[i -1][j] == 1) {
+                                        green++;
+                                    }
+                                }
+                                catch(err) {
+                                    console.log("index of array does not exist");
+                                }
+
+                                try {
+                                    if(this.gameField[i -1][j + 1] == 0) { //top right of selected cell
+                                        red++;
+                                    } else if(this.gameField[i -1][j + 1] == 1) {
+                                        green++;
+                                    }
+                                }
+                                catch(err) {
+                                    console.log("index of array does not exist");
+                                }
+
+                                try {
+                                    if(this.gameField[i][j - 1] == 0) { //left of selected cell
+                                        red++;
+                                    } else if(this.gameField[i][j - 1] == 1) {
+                                        green++;
+                                    }
+                                }
+                                catch(err) {
+                                    console.log("index of array does not exist");
+                                }
+
+                                try {
+                                    if(this.gameField[i][j + 1] == 0) { //right of selected cell
+                                        red++;
+                                    } else if(this.gameField[i][j + 1] == 1) {
+                                        green++;
+                                    }
+                                }
+                                catch(err) {
+                                    console.log("index of array does not exist");
+                                }
+
+                                try {
+                                    if(this.gameField[i + 1][j - 1] == 0) { //bottom left of selected cell
+                                        red++;
+                                    } else if(this.gameField[i + 1][j - 1] == 1) {
+                                        green++;
+                                    }
+                                }
+                                catch(err) {
+                                    console.log("index of array does not exist");
+                                }
+
+                                try {
+                                    if(this.gameField[i + 1][j] == 0) { //bottom of selected cell
+                                        red++;
+                                    } else if(this.gameField[i + 1][j] == 1) {
+                                        green++;
+                                    }
+                                }
+                                catch(err) {
+                                    console.log("index of array does not exist");
+                                }
+
+                                try {
+                                    if(this.gameField[i + 1][j + 1] == 0) { //bottom right of selected cell
+                                        red++;
+                                    } else if(this.gameField[i + 1][j + 1] == 1) {
+                                        green++;
+                                    }
+                                }
+                                catch(err) {
+                                    console.log("index of array does not exist");
+                                }
+                                //debugger;
+                                if((this.gameField[i][j] == 0 || this.gameField[i][j] == 1) && (green == 3 || green == 6)) {
+                                        nextGenField[i][j] = 1;
+                                }
+
+                                switch(green) {
+                                  case 0:
+                                    nextGenField[i][j] = 0;
+                                    break;
+                                  case 1:
+                                    nextGenField[i][j] = 0;
+                                    break;
+                                  case 2:
+                                    if(this.gameField[i][j] == 1)
+                                            nextGenField[i][j] = 1;
+                                    else 
+                                    nextGenField[i][j] = 0;
+                                    break;
+                                  case 4:
+                                    nextGenField[i][j] = 0;
+                                    break;
+                                  case 5:
+                                    nextGenField[i][j] = 0;
+                                    break;
+                                  case 7:
+                                    nextGenField[i][j] = 0;
+                                    break;
+                                  case 8:
+                                    nextGenField[i][j] = 0;
+                                    break;
+                                  default:
+                                }
+                                //console.log("red: " + red + "green: " + green);
+                    }
+                }
+                return nextGenField;
+            }
+        }
+    </script>
+</body>
+</html>
